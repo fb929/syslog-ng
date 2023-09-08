@@ -1,9 +1,9 @@
 on:
   push:
-    branches: [main]
+    #branches: [main]
     # Sequence of patterns matched against refs/tags
-    #tags:
-    #- 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 name: release
 
@@ -135,6 +135,12 @@ jobs:
             rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             "
       # }}
+
+      # create release and upload assets
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: /root/rpmbuild/RPMS/${{ steps.release_info.outputs.FPM_ARCHITECTURE }}/*
 
 #      # create asset {{
 #      - name: create zip archive
