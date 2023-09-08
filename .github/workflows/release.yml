@@ -1,0 +1,197 @@
+on:
+  push:
+    branches: [main]
+    # Sequence of patterns matched against refs/tags
+    #tags:
+    #- 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: release
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: docker.io
+
+jobs:
+  #create_release:
+  #  permissions: write-all
+  #  name: create release
+  #  runs-on: ubuntu-latest
+  #  outputs:
+  #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #  steps:
+  #    - name: create release
+  #      id: create_release
+  #      uses: actions/create-release@v1
+  #      env:
+  #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #      with:
+  #        tag_name: ${{ github.ref }}
+  #        release_name: Release ${{ github.ref }}
+  #        draft: false
+  #        prerelease: false
+  build:
+    name: build release
+    runs-on: ubuntu-latest
+    #needs: create_release
+    permissions: write-all
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          #- arm64
+        os:
+          - linux
+        image_name:
+          - amazonlinux:2
+          #- ubuntu:22.04
+        include:
+          - arch: amd64
+            rpm_arch: x86_64
+          #- arch: arm64
+          #  rpm_arch: aarch64
+
+    steps:
+      - name: Checkout Github code
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ matrix.arch }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
+      - name: get release version
+        id: release-version
+        #run: echo "$GITHUB_REF_NAME" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
+        run: echo "3.29.1" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
+
+      - name: get os_release info
+        id: release_info
+        run: |
+          case ${{ matrix.image_name }} in
+            amazonlinux:2)
+              OS_RELEASE_ID="amzn2"
+              FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
+              FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
+              FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
+              PACKAGE_TYPE=rpm
+              #INSTALL_REQUIRED_PACKAGES_CMD="yum install -y wget make gcc tar gzip which pkgconfig"
+              INSTALL_REQUIRED_PACKAGES_CMD="yum install -y rpm-build"
+            ;;
+            ubuntu:22.04)
+              OS_RELEASE_ID="ubuntu22"
+              FPM_OPTS="--deb-dist $OS_RELEASE_ID --iteration $OS_RELEASE_ID"
+              FPM_ARCHITECTURE="${{ matrix.arch }}"
+              FPM_ASSET_NAME="${{ github.event.repository.name }}_${{ steps.release-version.outputs.RELEASE_VERSION }}-${OS_RELEASE_ID}_${FPM_ARCHITECTURE}.deb"
+              PACKAGE_TYPE=deb
+              INSTALL_REQUIRED_PACKAGES_CMD="apt-get update && apt install -y wget make gcc tar gzip debianutils pkg-config"
+            ;;
+            *)
+              echo "ERROR: unsupported matrix.image_name=${{ matrix.image_name }}" 1>&2
+              exit 1
+            ;;
+          esac
+          TGZ_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}.${{ matrix.os }}-${OS_RELEASE_ID}-${{ matrix.arch }}.tgz"
+          echo "OS_RELEASE_ID=$OS_RELEASE_ID" >> $GITHUB_OUTPUT
+          echo "FPM_OPTS=$FPM_OPTS" >> $GITHUB_OUTPUT
+          echo "FPM_ARCHITECTURE=$FPM_ARCHITECTURE" >> $GITHUB_OUTPUT
+          echo "FPM_ASSET_NAME=$FPM_ASSET_NAME" >> $GITHUB_OUTPUT
+          echo "PACKAGE_TYPE=$PACKAGE_TYPE" >> $GITHUB_OUTPUT
+          echo "INSTALL_REQUIRED_PACKAGES_CMD=$INSTALL_REQUIRED_PACKAGES_CMD" >> $GITHUB_OUTPUT
+          echo "TGZ_ASSET_NAME=$TGZ_ASSET_NAME" >> $GITHUB_OUTPUT
+
+      - name: download src.rpm
+        run: |
+          wget https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng329/epel-7-x86_64/01638937-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+
+      # build {{
+      - name: build on ${{ matrix.image_name }}
+        if: matrix.os == 'linux'
+        run: |
+          docker run --platform ${{ matrix.arch }} --rm --volume ${{ github.workspace }}:/workspace --workdir /workspace ${{ matrix.image_name }} /bin/bash -c \
+            "uname -a
+            echo PREFIX=/workspace/usr
+            echo OS_RELEASE_ID=${{ steps.release_info.outputs.OS_RELEASE_ID }}
+            echo FPM_OPTS=${{ steps.release_info.outputs.FPM_OPTS }}
+            echo FPM_ARCHITECTURE=${{ steps.release_info.outputs.FPM_ARCHITECTURE }}
+            echo FPM_ASSET_NAME=${{ steps.release_info.outputs.FPM_ASSET_NAME }}
+            echo PACKAGE_MANAGE=${{ steps.release_info.outputs.PACKAGE_TYPE }}
+            echo TGZ_ASSET_NAME=${{ steps.release_info.outputs.TGZ_ASSET_NAME }}
+            ${{ steps.release_info.outputs.INSTALL_REQUIRED_PACKAGES_CMD }}
+            "
+      # }}
+
+#      # create asset {{
+#      - name: create zip archive
+#        if: matrix.os == 'windows'
+#        run: |
+#          zip --junk-paths ${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}.${{ matrix.os }}-${{ steps.release_info.outputs.OS_RELEASE_ID }}-${{ matrix.arch }}.zip ./usr/*
+#      - name: create tar archive
+#        if: matrix.os != 'windows'
+#        run: |
+#          tar \
+#            --create \
+#            --gzip \
+#            --verbose \
+#            --exclude='.gitignore' \
+#            --file=${{ steps.release_info.outputs.TGZ_ASSET_NAME }} \
+#            ./usr/
+#      - name: create package ${{ steps.release_info.outputs.PACKAGE_TYPE }}
+#        if: matrix.os == 'linux'
+#        uses: bpicode/github-action-fpm@master
+#        with:
+#          fpm_opts:
+#            --name ${{ github.event.repository.name }}
+#            --version ${{ steps.release-version.outputs.RELEASE_VERSION }}
+#            --architecture ${{ steps.release_info.outputs.FPM_ARCHITECTURE }}
+#            --exclude '*/.gitignore'
+#            --exclude '*/.git'
+#            --input-type dir
+#            --output-type ${{ steps.release_info.outputs.PACKAGE_TYPE }}
+#            ${{ steps.release_info.outputs.FPM_OPTS }}
+#          fpm_args: ./usr/
+#      # }}
+#
+#      - name: debug
+#        run: |
+#          ls -al ./
+#          find ./usr/ -type f
+#
+#      # upload-release-asset {{
+#      - name: upload-release-asset zip
+#        if: matrix.os == 'windows'
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ needs.create_release.outputs.upload_url }}
+#          asset_path: ./${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}.${{ matrix.os }}-${{ steps.release_info.outputs.OS_RELEASE_ID }}-${{ matrix.arch }}.zip
+#          asset_name: ${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}.${{ matrix.os }}-${{ steps.release_info.outputs.OS_RELEASE_ID }}-${{ matrix.arch }}.zip
+#          asset_content_type: application/zip
+#
+#      - name: upload-release-asset tgz
+#        if: matrix.os != 'windows'
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ needs.create_release.outputs.upload_url }}
+#          asset_path: ./${{ steps.release_info.outputs.TGZ_ASSET_NAME }}
+#          asset_name: ${{ steps.release_info.outputs.TGZ_ASSET_NAME }}
+#          asset_content_type: application/gzip
+#
+#      - name: upload-release-asset ${{ steps.release_info.outputs.PACKAGE_TYPE }}
+#        if: matrix.os == 'linux'
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ needs.create_release.outputs.upload_url }}
+#          asset_path: ./${{ steps.release_info.outputs.FPM_ASSET_NAME }}
+#          asset_name: ${{ steps.release_info.outputs.FPM_ASSET_NAME }}
+#          asset_content_type: application/octet-stream
+#      # }}
