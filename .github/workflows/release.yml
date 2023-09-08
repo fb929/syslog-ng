@@ -124,14 +124,12 @@ jobs:
             echo TGZ_ASSET_NAME=${{ steps.release_info.outputs.TGZ_ASSET_NAME }}
             ${{ steps.release_info.outputs.INSTALL_REQUIRED_PACKAGES_CMD }}
 
-            cat <<EOF > /etc/yum.repos.d/syslog-ng.repo
-[syslog-ng]
-name=repo for syslog-ng owned by czanik
-baseurl='https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-$basearch'
-enabled=1
-gpgcheck=0
-repo_gpgcheck=0
-EOF
+            echo '[syslog-ng]' > /etc/yum.repos.d/syslog-ng.repo
+            echo 'name=repo for syslog-ng owned by czanik' >> /etc/yum.repos.d/syslog-ng.repo
+            echo 'baseurl=https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-$basearch' >> /etc/yum.repos.d/syslog-ng.repo
+            echo 'enabled=1' >> /etc/yum.repos.d/syslog-ng.repo
+            echo 'gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
+            echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
 
             yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
