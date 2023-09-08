@@ -80,7 +80,7 @@ jobs:
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               #INSTALL_REQUIRED_PACKAGES_CMD="yum install -y wget make gcc tar gzip which pkgconfig"
-              INSTALL_REQUIRED_PACKAGES_CMD="yum install -y rpm-build"
+              INSTALL_REQUIRED_PACKAGES_CMD="yum install -y rpm-build yum-utils"
             ;;
             ubuntu:22.04)
               OS_RELEASE_ID="ubuntu22"
@@ -122,6 +122,7 @@ jobs:
             echo PACKAGE_MANAGE=${{ steps.release_info.outputs.PACKAGE_TYPE }}
             echo TGZ_ASSET_NAME=${{ steps.release_info.outputs.TGZ_ASSET_NAME }}
             ${{ steps.release_info.outputs.INSTALL_REQUIRED_PACKAGES_CMD }}
+            yum-builddep syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             "
       # }}
