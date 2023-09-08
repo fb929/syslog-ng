@@ -38,18 +38,16 @@ jobs:
       matrix:
         arch:
           - amd64
-          #- arm64
+          - arm64
         os:
           - linux
         image_name:
           - centos:7
-          #- amazonlinux:2
-          #- ubuntu:22.04
         include:
           - arch: amd64
             rpm_arch: x86_64
-          #- arch: arm64
-          #  rpm_arch: aarch64
+          - arch: arm64
+            rpm_arch: aarch64
 
     steps:
       - name: Checkout Github code
