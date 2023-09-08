@@ -73,14 +73,14 @@ jobs:
         id: release_info
         run: |
           case ${{ matrix.image_name }} in
-            amazonlinux:2)
-              OS_RELEASE_ID="amzn2"
+            centos:7)
+              OS_RELEASE_ID="centos7"
               FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               #INSTALL_REQUIRED_PACKAGES_CMD="yum install -y wget make gcc tar gzip which pkgconfig"
-              INSTALL_REQUIRED_PACKAGES_CMD="yum install -y rpm-build yum-utils"
+              INSTALL_REQUIRED_PACKAGES_CMD="yum update -7 && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
             ;;
             ubuntu:22.04)
               OS_RELEASE_ID="ubuntu22"
@@ -122,9 +122,12 @@ jobs:
             echo PACKAGE_MANAGE=${{ steps.release_info.outputs.PACKAGE_TYPE }}
             echo TGZ_ASSET_NAME=${{ steps.release_info.outputs.TGZ_ASSET_NAME }}
             ${{ steps.release_info.outputs.INSTALL_REQUIRED_PACKAGES_CMD }}
-            yum install -y amazon-linux-extras
-            amazon-linux-extras install -y epel
-            yum-builddep syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+
+            yum install -y https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-aarch64/01031826-libdbi/libdbi-0.9.0-6.el7.aarch64.rpm https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-aarch64/01031826-libdbi/libdbi-devel-0.9.0-6.el7.aarch64.rpm
+            yum install -y https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-aarch64/01031822-librdkafka/librdkafka-1.0.0-1.el7.aarch64.rpm https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-aarch64/01031822-librdkafka/librdkafka-devel-1.0.0-1.el7.aarch64.rpm
+            yum install -y https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-aarch64/01031821-riemann-c-client/riemann-c-client-1.10.4-2.el7.aarch64.rpm https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-aarch64/01031821-riemann-c-client/riemann-c-client-devel-1.10.4-2.el7.aarch64.rpm
+
+            yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             "
       # }}
