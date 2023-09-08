@@ -125,13 +125,13 @@ jobs:
             ${{ steps.release_info.outputs.INSTALL_REQUIRED_PACKAGES_CMD }}
 
             cat <<EOF > /etc/yum.repos.d/syslog-ng.repo
-            [syslog-ng]
-            name=repo for syslog-ng owned by czanik
-            baseurl='https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-$basearch'
-            enabled=1
-            gpgcheck=0
-            repo_gpgcheck=0
-            EOF
+[syslog-ng]
+name=repo for syslog-ng owned by czanik
+baseurl='https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-$basearch'
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+EOF
 
             yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
