@@ -1,9 +1,9 @@
 on:
   push:
-    #branches: [main]
+    branches: [main]
     # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    #tags:
+    #  - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 name: release
 
@@ -67,8 +67,8 @@ jobs:
 
       - name: get release version
         id: release-version
-        run: echo "$GITHUB_REF_NAME" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
-        #run: echo "v3.29.1" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
+        #run: echo "$GITHUB_REF_NAME" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
+        run: echo "v3.29.1" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
 
       - name: get os_release info
         id: release_info
@@ -80,7 +80,6 @@ jobs:
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
-              #INSTALL_REQUIRED_PACKAGES_CMD="yum install -y wget make gcc tar gzip which pkgconfig"
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
             ;;
             ubuntu:22.04)
@@ -132,15 +131,20 @@ jobs:
             echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
 
             yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
-            rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+            rpmbuild --root /workspace/ --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             "
       # }}
 
-      # create release and upload assets
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: /root/rpmbuild/RPMS/${{ steps.release_info.outputs.FPM_ARCHITECTURE }}/*
+      - name: debug
+        run: |
+          ls -al ./
+          find ./ -type f
+
+      ## create release and upload assets
+      #- name: Release
+      #  uses: softprops/action-gh-release@v1
+      #  with:
+      #    files: ${{ github.workspace }}/workspace/root/rpmbuild/RPMS/${{ steps.release_info.outputs.FPM_ARCHITECTURE }}/*
 
 #      # create asset {{
 #      - name: create zip archive
@@ -173,10 +177,6 @@ jobs:
 #          fpm_args: ./usr/
 #      # }}
 #
-#      - name: debug
-#        run: |
-#          ls -al ./
-#          find ./usr/ -type f
 #
 #      # upload-release-asset {{
 #      - name: upload-release-asset zip
