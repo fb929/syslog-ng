@@ -81,7 +81,7 @@ jobs:
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               #INSTALL_REQUIRED_PACKAGES_CMD="yum install -y wget make gcc tar gzip which pkgconfig"
-              INSTALL_REQUIRED_PACKAGES_CMD="yum update -7 && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
+              INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
             ;;
             ubuntu:22.04)
               OS_RELEASE_ID="ubuntu22"
