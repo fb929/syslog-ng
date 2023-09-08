@@ -126,7 +126,7 @@ jobs:
 
             echo '[syslog-ng]' > /etc/yum.repos.d/syslog-ng.repo
             echo 'name=repo for syslog-ng owned by czanik' >> /etc/yum.repos.d/syslog-ng.repo
-            echo 'baseurl=https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-$basearch' >> /etc/yum.repos.d/syslog-ng.repo
+            echo 'baseurl=https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng-stable/epel-7-${{ matrix.rpm_arch }}' >> /etc/yum.repos.d/syslog-ng.repo
             echo 'enabled=1' >> /etc/yum.repos.d/syslog-ng.repo
             echo 'gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
             echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
