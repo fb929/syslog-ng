@@ -131,7 +131,8 @@ jobs:
             echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
 
             yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
-            rpmbuild --root /workspace/ --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+            rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+            mv /root/rpmbuild/RPMS/x86_64 ./
             "
       # }}
 
