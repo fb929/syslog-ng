@@ -57,19 +57,23 @@ jobs:
           case ${{ matrix.image_name }} in
             centos:7)
               OS_RELEASE_ID="centos7"
+              OS_VERSION="el7"
               FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release-version.outputs.BUILD_NUMBER }}.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
+              SRPM_URL="https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng329/epel-7-x86_64/01638937-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_VERSION}.src.rpm"
             ;;
             almalinux:9)
               OS_RELEASE_ID="almalinux9"
+              OS_VERSION="el9"
               FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release-version.outputs.BUILD_NUMBER }}.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
+              SRPM_URL=https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng337/epel-9-x86_64/04505176-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_VERSION}.src.rpm
             ;;
             # not supported
             #ubuntu:22.04)
@@ -93,10 +97,13 @@ jobs:
           echo "PACKAGE_TYPE=$PACKAGE_TYPE" >> $GITHUB_OUTPUT
           echo "INSTALL_REQUIRED_PACKAGES_CMD=$INSTALL_REQUIRED_PACKAGES_CMD" >> $GITHUB_OUTPUT
           echo "TGZ_ASSET_NAME=$TGZ_ASSET_NAME" >> $GITHUB_OUTPUT
+          echo "SRPM_URL=$SRPM_URL" >> $GITHUB_OUTPUT
+
+      - name: debug show GITHUB_OUTPUT
+        run: echo ${{ steps.release_info.outputs }}
 
       - name: download src.rpm
-        run: |
-          wget https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng329/epel-7-x86_64/01638937-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+        run: wget ${{ steps.release_info.outputs.SRPM_URL }}
 
       # build {{
       - name: build on ${{ matrix.image_name }}
