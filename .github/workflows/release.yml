@@ -63,7 +63,7 @@ jobs:
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release-version.outputs.BUILD_NUMBER }}.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
-              SRPM_URL="https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng337/epel-7-x86_64/04505176-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_VERSION}.src.rpm
+              SRPM_URL="https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng337/epel-7-x86_64/04505176-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_VERSION}.src.rpm"
             ;;
             almalinux:9)
               OS_RELEASE_ID="almalinux9"
@@ -73,7 +73,7 @@ jobs:
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release-version.outputs.BUILD_NUMBER }}.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
-              SRPM_URL=https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng337/epel-9-x86_64/04505176-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_VERSION}.src.rpm
+              SRPM_URL="https://download.copr.fedorainfracloud.org/results/czanik/syslog-ng337/epel-9-x86_64/04505176-syslog-ng/syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_VERSION}.src.rpm"
             ;;
             # not supported
             #ubuntu:22.04)
