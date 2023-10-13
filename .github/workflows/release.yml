@@ -47,7 +47,7 @@ jobs:
 
       - name: get release version
         id: release-version
-        run:
+        run: |
           echo "$GITHUB_REF_NAME" | sed 's|^[a-zA-Z]\+||; s|-[0-9]\+$||; s|^|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
           echo "$GITHUB_REF_NAME" | sed 's/^.*-\([0-9]\+\)$/BUILD_NUMBER=\1/' >> $GITHUB_OUTPUT
 
