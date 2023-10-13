@@ -128,8 +128,8 @@ jobs:
             echo 'gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
             echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
 
-            yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${{ steps.release-version.outputs.OS_VERSION }}.src.rpm
-            rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${{ steps.release-version.outputs.OS_VERSION }}.src.rpm
+            yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release_info.outputs.OS_VERSION }}.src.rpm
+            rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release_info.outputs.OS_VERSION }}.src.rpm
             mv /root/rpmbuild/RPMS/${{ steps.release_info.outputs.FPM_ARCHITECTURE }} ./
             "
       # }}
