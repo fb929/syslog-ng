@@ -47,7 +47,9 @@ jobs:
 
       - name: get release version
         id: release-version
-        run: echo "$GITHUB_REF_NAME" | sed 's|^[a-zA-Z]\+|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
+        run:
+          echo "$GITHUB_REF_NAME" | sed 's|^[a-zA-Z]\+||; s|-[0-9]\+$||; s|^|RELEASE_VERSION=|' >> $GITHUB_OUTPUT
+          echo "$GITHUB_REF_NAME" | sed 's/^.*-\([0-9]\+\)$/BUILD_NUMBER=\1/' >> $GITHUB_OUTPUT
 
       - name: get os_release info
         id: release_info
@@ -57,7 +59,7 @@ jobs:
               OS_RELEASE_ID="centos7"
               FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
-              FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
+              FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release-version.outputs.BUILD_NUMBER }}.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
             ;;
@@ -65,18 +67,19 @@ jobs:
               OS_RELEASE_ID="almalinux9"
               FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
-              FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
+              FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-${{ steps.release-version.outputs.BUILD_NUMBER }}.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
               PACKAGE_TYPE=rpm
               INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
             ;;
-            ubuntu:22.04)
-              OS_RELEASE_ID="ubuntu22"
-              FPM_OPTS="--deb-dist $OS_RELEASE_ID --iteration $OS_RELEASE_ID"
-              FPM_ARCHITECTURE="${{ matrix.arch }}"
-              FPM_ASSET_NAME="${{ github.event.repository.name }}_${{ steps.release-version.outputs.RELEASE_VERSION }}-${OS_RELEASE_ID}_${FPM_ARCHITECTURE}.deb"
-              PACKAGE_TYPE=deb
-              INSTALL_REQUIRED_PACKAGES_CMD="apt-get update && apt install -y wget make gcc tar gzip debianutils pkg-config"
-            ;;
+            # not supported
+            #ubuntu:22.04)
+            #  OS_RELEASE_ID="ubuntu22"
+            #  FPM_OPTS="--deb-dist $OS_RELEASE_ID --iteration $OS_RELEASE_ID"
+            #  FPM_ARCHITECTURE="${{ matrix.arch }}"
+            #  FPM_ASSET_NAME="${{ github.event.repository.name }}_${{ steps.release-version.outputs.RELEASE_VERSION }}-${OS_RELEASE_ID}_${FPM_ARCHITECTURE}.deb"
+            #  PACKAGE_TYPE=deb
+            #  INSTALL_REQUIRED_PACKAGES_CMD="apt-get update && apt install -y wget make gcc tar gzip debianutils pkg-config"
+            #;;
             *)
               echo "ERROR: unsupported matrix.image_name=${{ matrix.image_name }}" 1>&2
               exit 1
@@ -118,7 +121,7 @@ jobs:
             echo 'repo_gpgcheck=0' >> /etc/yum.repos.d/syslog-ng.repo
 
             yum-builddep -y syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
-            rpmbuild --rebuild syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
+            rpmbuild --rebuild --release=${{ steps.release-version.outputs.BUILD_NUMBER }} syslog-ng-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.el7.src.rpm
             mv /root/rpmbuild/RPMS/${{ steps.release_info.outputs.FPM_ARCHITECTURE }} ./
             "
       # }}
