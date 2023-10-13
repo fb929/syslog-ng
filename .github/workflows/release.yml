@@ -24,6 +24,7 @@ jobs:
           - linux
         image_name:
           - centos:7
+          - almalinux:9
         include:
           - arch: amd64
             rpm_arch: x86_64
@@ -54,6 +55,14 @@ jobs:
           case ${{ matrix.image_name }} in
             centos:7)
               OS_RELEASE_ID="centos7"
+              FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
+              FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
+              FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
+              PACKAGE_TYPE=rpm
+              INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y epel-release rpm-build yum-utils gcc-c++ make which wget"
+            ;;
+            almalinux:9)
+              OS_RELEASE_ID="almalinux9"
               FPM_OPTS="--rpm-dist $OS_RELEASE_ID"
               FPM_ARCHITECTURE="${{ matrix.rpm_arch }}"
               FPM_ASSET_NAME="${{ github.event.repository.name }}-${{ steps.release-version.outputs.RELEASE_VERSION }}-1.${OS_RELEASE_ID}.${FPM_ARCHITECTURE}.rpm"
